@@ -13,9 +13,6 @@ local lastWeaponHash = nil
 local playerWeapons = {}
 local hudVisible = true
 
-local cachedPlayerPed = PlayerPedId()
-local cachedPlayerId = PlayerId()
-
 Citizen.CreateThread(function()
     local file = LoadResourceFile(GetCurrentResourceName(), "oulsen_satmap_postals.json")
     if file then
@@ -183,7 +180,7 @@ Citizen.CreateThread(function()
         Citizen.Wait(100)
 
         if characterLoaded and not usingRadio then
-            local micActiveNow = NetworkIsPlayerTalking(cachedPlayerId)
+            local micActiveNow = NetworkIsPlayerTalking(PlayerPedId())
 
             if micActiveNow ~= micWasActive then
                 micWasActive = micActiveNow
@@ -254,16 +251,24 @@ end
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(100)
+        Citizen.Wait(10)
 
         if characterLoaded and not shouldHideHUD() then
             local playerPed = PlayerPedId()
-            local isInVehicleNow = IsPedInAnyVehicle(playerPed, false)
+            local vehicle = GetVehiclePedIsIn(playerPed, false)
+            local isDriver = false
 
-            if isInVehicleNow and not inVehicle then
+            if vehicle ~= 0 then
+                local seatIndex = -1 
+                if GetPedInVehicleSeat(vehicle, seatIndex) == playerPed then
+                    isDriver = true
+                end
+            end
+
+            if isDriver and not inVehicle then
                 inVehicle = true
                 SendNUIMessage({ type = "showTachoWithAnimation" })
-            elseif not isInVehicleNow and inVehicle then
+            elseif (not isDriver or vehicle == 0) and inVehicle then
                 inVehicle = false
                 SendNUIMessage({ type = "hideTachoWithAnimation" })
                 SendNUIMessage({ type = "updateSpeed", speed = 0 })
@@ -473,7 +478,7 @@ function isWeaponInInventory(weaponHash)
 end
 
 function checkPlayerWeaponStatus()
-    local playerPed = cachedPlayerPed
+    local playerPed = PlayerPedId()
     local weaponHash = GetSelectedPedWeapon(playerPed)
 
     if weaponHash ~= `WEAPON_UNARMED` and isWeaponInInventory(weaponHash) then
@@ -513,7 +518,7 @@ Citizen.CreateThread(function()
 end)
 
 function updateWeaponAmmo()
-    local playerPed = cachedPlayerPed
+    local playerPed = PlayerPedId()
     local weaponHash = GetSelectedPedWeapon(playerPed)
 
     if weaponHash ~= `WEAPON_UNARMED` and isWeaponInInventory(weaponHash) then
