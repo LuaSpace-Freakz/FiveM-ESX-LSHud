@@ -69,6 +69,13 @@ function initializePlayerData()
 
         SendNUIMessage({ type = "showHUD" })
 
+        local playerPed = PlayerPedId()
+        if IsPedInAnyVehicle(playerPed, false) then
+            inVehicle = true
+            SendNUIMessage({ type = "showTachoWithAnimation" })
+            updateIndicators()
+        end
+
         startHUDUpdateThread()
         checkPlayerWeaponStatus()
     end)
@@ -245,13 +252,12 @@ function startHUDUpdateThread()
     end)
 end
 
-
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(500)
+        Citizen.Wait(100)
 
         if characterLoaded and not shouldHideHUD() then
-            local playerPed = cachedPlayerPed
+            local playerPed = PlayerPedId()
             local isInVehicleNow = IsPedInAnyVehicle(playerPed, false)
 
             if isInVehicleNow and not inVehicle then
@@ -290,7 +296,7 @@ function getFuelLevel(vehicle)
 end
 
 function updateIndicators()
-    local playerPed = cachedPlayerPed
+    local playerPed = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(playerPed, false)
 
     if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
@@ -312,15 +318,20 @@ function updateIndicators()
         else
             hazardLightsOn = false
 
-            leftIndicatorOn = (indicatorLights == 1)
-            rightIndicatorOn = (indicatorLights == 2)
+            local newLeftIndicatorOn = (indicatorLights == 1)
+            local newRightIndicatorOn = (indicatorLights == 2)
 
-            SendNUIMessage({
-                type = "updateIndicators",
-                left = leftIndicatorOn,
-                right = rightIndicatorOn,
-                sync = false
-            })
+            if newLeftIndicatorOn ~= leftIndicatorOn or newRightIndicatorOn ~= rightIndicatorOn then
+                leftIndicatorOn = newLeftIndicatorOn
+                rightIndicatorOn = newRightIndicatorOn
+
+                SendNUIMessage({
+                    type = "updateIndicators",
+                    left = leftIndicatorOn,
+                    right = rightIndicatorOn,
+                    sync = false
+                })
+            end
         end
     else
         if leftIndicatorOn or rightIndicatorOn or hazardLightsOn then
@@ -337,27 +348,23 @@ function updateIndicators()
 end
 
 function updateHUD()
-    local playerPed = cachedPlayerPed
+    local playerPed = PlayerPedId()
     local health = (GetEntityHealth(playerPed) - 100)
     local hunger, thirst = 100, 100
 
-    
-    local statuses = ESX.GetPlayerData().status
-    if statuses then
-        for _, status in ipairs(statuses) do
-            if status.name == 'hunger' then
-                hunger = math.floor((status.val / 10000))
-            elseif status.name == 'thirst' then
-                thirst = math.floor((status.val / 10000))
-            end
-        end
-    end
+    TriggerEvent('esx_status:getStatus', 'hunger', function(status)
+        hunger = math.floor(status.getPercent())
+    end)
+
+    TriggerEvent('esx_status:getStatus', 'thirst', function(status)
+        thirst = math.floor(status.getPercent())
+    end)
 
     if not ESX.PlayerData.job then
         ESX.PlayerData = ESX.GetPlayerData()
     end
 
-    local playerId = GetPlayerServerId(cachedPlayerId)
+    local playerId = GetPlayerServerId(PlayerId())
     local coords = GetEntityCoords(playerPed)
     local postalCode = getClosestPostal(coords)
 
@@ -384,49 +391,52 @@ function updateHUD()
 
     if inVehicle then
         local vehicle = GetVehiclePedIsIn(playerPed, false)
-        local speed = GetEntitySpeed(vehicle) * 3.6
-        local fuelLevel = getFuelLevel(vehicle)
-        local maxSpeed = math.min(GetVehicleEstimatedMaxSpeed(vehicle) * 3.6, 300)
+        if vehicle and vehicle ~= 0 then
+            local speed = GetEntitySpeed(vehicle) * 3.6
+            local fuelLevel = getFuelLevel(vehicle)
+            local maxSpeed = math.min(GetVehicleEstimatedMaxSpeed(vehicle) * 3.6, 300)
 
-        SendNUIMessage({
-            type = "updateSpeed",
-            speed = math.floor(speed),
-            maxSpeed = math.floor(maxSpeed)
-        })
+            SendNUIMessage({
+                type = "updateSpeed",
+                speed = math.floor(speed),
+                maxSpeed = math.floor(maxSpeed)
+            })
 
-        SendNUIMessage({
-            type = "updateFuel",
-            fuel = math.floor(fuelLevel)
-        })
+            SendNUIMessage({
+                type = "updateFuel",
+                fuel = math.floor(fuelLevel)
+            })
 
-        updateIndicators()
+            updateIndicators()
 
-        local engineHealth = math.floor(GetVehicleEngineHealth(vehicle) / 10)
-        SendNUIMessage({
-            type = "updateEngineCondition",
-            engineHealth = engineHealth
-        })
+            local engineHealth = math.floor(GetVehicleEngineHealth(vehicle) / 10)
+            SendNUIMessage({
+                type = "updateEngineCondition",
+                engineHealth = engineHealth
+            })
 
-        local retval, vehicleLightsOn, highbeamsOn = GetVehicleLightsState(vehicle)
-        local lightsMode = 0
+            local retval, vehicleLightsOn, highbeamsOn = GetVehicleLightsState(vehicle)
+            local lightsMode = 0
 
-        if retval then
-            if highbeamsOn == 1 then
-                lightsMode = 2
-            elseif vehicleLightsOn == 1 then
-                lightsMode = 1
-            else
-                lightsMode = 0
+            if retval then
+                if highbeamsOn == 1 then
+                    lightsMode = 2
+                elseif vehicleLightsOn == 1 then
+                    lightsMode = 1
+                else
+                    lightsMode = 0
+                end
             end
-        end
 
-        SendNUIMessage({
-            type = "updateLightsMode",
-            lightsMode = lightsMode
-        })
+            SendNUIMessage({
+                type = "updateLightsMode",
+                lightsMode = lightsMode
+            })
+        else
+            inVehicle = false
+        end
     end
 end
-
 
 function GetWeatherTypeNameFromHash(weatherHash)
     local weatherTypes = {
