@@ -256,10 +256,11 @@ i {
     }
 }
 
+
 #tacho {
     position: absolute;
-    bottom: 1.85185vh;
-    right: 2.60417vw;
+    bottom: 1.25rem;
+    right: 3.125rem;
     background-color: transparent;
     display: none;
     align-items: center;
@@ -267,6 +268,7 @@ i {
     overflow: hidden;
     z-index: 1000;
 }
+
 
 #tachometer-svg {
     width: 100%;
@@ -287,6 +289,7 @@ i {
     transition: stroke-dashoffset 0.1s linear;
 }
 
+
 #speed-display {
     position: absolute;
     top: 40%;
@@ -296,7 +299,7 @@ i {
 }
 
 #speed-text {
-    font-size: 3.33333vw;
+    font-size: 4rem;
     color: #fff;
     font-weight: bold;
     margin: 0;
@@ -307,29 +310,32 @@ i {
 }
 
 #speed-unit {
-    font-size: 0.9375vw;
+    font-size: 1.125rem;
     color: #fff;
-    margin-top: -0.92593vh;
+    margin-top: -0.625rem;
 }
 
 .blinker {
     position: absolute;
-    bottom: 13.19444vh;
-    font-size: 1.25vw;
+    bottom: 8.90625rem;
+    font-size: 1.5rem;
     font-weight: 900;
+   
 }
 
 #left-blinker {
-    left: 1.82292vw;
+    left: 2.1875rem;
 }
 
 #right-blinker {
-    right: 1.82292vw;
+    right: 2.1875rem;
 }
+
 
 .blinker i {
     color: #999;
 }
+
 
 .blinker.active i {
     color: #5300f5 !important;
@@ -339,16 +345,16 @@ i {
 
 #fuel-container {
     position: absolute;
-    bottom: 3.70370vh;
-    left: 2.21354vw;
+    bottom: 2.5rem;
+    left: 2.65625rem;
     z-index: 100;
 }
 
 #fuel-bar-container {
-    width: 8.59375vw;
-    height: 1.62037vh;
+    width: 10.3125rem;
+    height: 1.09375rem;
     background-color: #444444;
-    border-radius: 0.26042vw;
+    border-radius: 0.3125rem;
     position: relative;
     overflow: hidden;
 }
@@ -366,30 +372,31 @@ i {
 
 #fuel-bar-container i {
     position: absolute;
-    left: 0.26042vw;
+    left: 0.3125rem;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 0.625vw;
+    font-size: 0.75rem;
     color: #fff;
     z-index: 2;
 }
 
 #fuel-percent {
     position: absolute;
-    right: 0.26042vw;
+    right: 0.3125rem;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 0.625vw;
+    font-size: 0.75rem;
     color: #fff;
     z-index: 2;
 }
 
+
 #engine-condition {
     position: absolute;
     width: 15%;
-    bottom: 6.5vh;
-    left: 3vw;
-    display: flex;
+    bottom: 4rem;
+    left: 3.5rem;
+    font-size: 1.875rem;
 }
 
 @keyframes blinkRed {
@@ -401,21 +408,25 @@ i {
     }
 }
 
+
 .blink-red {
     animation: blinkRed 0.5s infinite;
 }
 
+
 #light-mode-icons {
     position: absolute;
-    bottom: 6.25vh;
-    left: 8.33333vw;
+    bottom: 4.21875rem;
+    left: 10rem;
 }
 
 #light-mode-icons svg {
-    width: 1.5625vw;
-    height: 1.5625vw;
+    width: 1.875rem;
+    height: 1.875rem;
     fill: #5300f5;
 }
+
+
 
 @keyframes blink {
     0%, 50%, 100% {
@@ -425,7 +436,6 @@ i {
         opacity: 0;
     }
 }
-
 #ammo-container {
     position: absolute;
     bottom: 1.85185vh;
