@@ -441,15 +441,9 @@ function updateHUD()
 end
 
 function isWeaponInInventory(weaponHash)
-    local loadout = ESX.PlayerData.loadout
-    if loadout then
-        for _, weapon in ipairs(loadout) do
-            if GetHashKey(weapon.name) == weaponHash then
-                return true
-            end
-        end
-    end
-    return false
+    local playerPed = PlayerPedId()
+    local hasWeapon = HasPedGotWeapon(playerPed, weaponHash, false)
+    return hasWeapon
 end
 
 function checkPlayerWeaponStatus()
@@ -485,6 +479,7 @@ end
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(100)
+        checkPlayerWeaponStatus()
         if not isSyncPaused then
             updateWeaponAmmo()
         end
