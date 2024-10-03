@@ -23,7 +23,6 @@ Citizen.CreateThread(function()
     end
 end)
 
-
 Citizen.CreateThread(function()
     while ESX == nil do
         TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
@@ -36,7 +35,6 @@ Citizen.CreateThread(function()
 
     ESX.PlayerData = ESX.GetPlayerData()
 
-    
     TriggerEvent("pma-voice:settingsCallback", function(voiceSettings)
         voiceModes = voiceSettings.voiceModes
     end)
@@ -45,6 +43,7 @@ Citizen.CreateThread(function()
 end)
 
 function initializePlayerData()
+    print("initializePlayerData: Wird aufgerufen.")
     bank, blackMoney = 0, 0
 
     if ESX.PlayerData.accounts then
@@ -63,14 +62,21 @@ function initializePlayerData()
         money = serverMoney
 
         characterLoaded = true
+        print("initializePlayerData: characterLoaded auf true gesetzt.")
 
         SendNUIMessage({ type = "showHUD" })
+        print("initializePlayerData: HUD angezeigt.")
 
         local playerPed = PlayerPedId()
-        if IsPedInAnyVehicle(playerPed, false) then
-            inVehicle = true
-            SendNUIMessage({ type = "showTachoWithAnimation" })
-            updateIndicators()
+        local vehicle = GetVehiclePedIsIn(playerPed, false)
+        if vehicle ~= 0 then
+            local seatIndex = -1 
+            if GetPedInVehicleSeat(vehicle, seatIndex) == playerPed then
+                inVehicle = true
+                SendNUIMessage({ type = "showTachoWithAnimation" })
+                print("initializePlayerData: Tacho angezeigt.")
+                updateIndicators()
+            end
         end
 
         startHUDUpdateThread()
@@ -81,6 +87,7 @@ end
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
     ESX.PlayerData = xPlayer
+    print("esx:playerLoaded: Spieler geladen.")
     initializePlayerData()
 end)
 
@@ -93,11 +100,13 @@ AddEventHandler('esx:setAccountMoney', function(account)
     elseif account.name == 'money' then
         money = account.money
     end
+    print("esx:setAccountMoney: Konto aktualisiert - " .. account.name .. ": " .. account.money)
 end)
 
 RegisterNetEvent('esx:setJob')
 AddEventHandler('esx:setJob', function(job)
     ESX.PlayerData.job = job
+    print("esx:setJob: Job aktualisiert - " .. job.label .. " - " .. job.grade_label)
 end)
 
 AddEventHandler('pma-voice:setTalkingMode', function(mode)
@@ -117,6 +126,7 @@ AddEventHandler('pma-voice:setTalkingMode', function(mode)
         type = "updateVoiceLevel",
         voiceLevel = voiceMode
     })
+    print("Voice Level aktualisiert: " .. tostring(voiceMode))
 end)
 
 function CreateProximityMarker(proximityRange)
@@ -180,7 +190,7 @@ Citizen.CreateThread(function()
         Citizen.Wait(100)
 
         if characterLoaded and not usingRadio then
-            local micActiveNow = NetworkIsPlayerTalking(PlayerPedId())
+            local micActiveNow = NetworkIsPlayerTalking(PlayerId())
 
             if micActiveNow ~= micWasActive then
                 micWasActive = micActiveNow
@@ -190,6 +200,7 @@ Citizen.CreateThread(function()
                     type = "updateMicStatus",
                     mic = micActiveNow
                 })
+                print("Mikrofonstatus aktualisiert: " .. tostring(micActiveNow))
             end
         end
     end
@@ -202,6 +213,7 @@ AddEventHandler("pma-voice:radioActive", function(radioTalking)
         type = "updateRadioStatus",
         radio = radioTalking
     })
+    print("Radiostatus aktualisiert: " .. tostring(radioTalking))
 end)
 
 RegisterNetEvent('LS-Hud:updateDateTime')
@@ -214,6 +226,7 @@ AddEventHandler('LS-Hud:updateDateTime', function(hour, minute, day, month, year
         time = formattedTime,
         date = formattedDate
     })
+    print("Datum und Uhrzeit aktualisiert: " .. formattedTime .. " | " .. formattedDate)
 end)
 
 RegisterNetEvent('LS-Hud:updatePlayerCount')
@@ -223,6 +236,7 @@ AddEventHandler('LS-Hud:updatePlayerCount', function(onlinePlayers, maxPlayers)
         online = onlinePlayers,
         max = maxPlayers
     })
+    print("Spieleranzahl aktualisiert: " .. onlinePlayers .. "/" .. maxPlayers)
 end)
 
 function shouldHideHUD()
@@ -230,17 +244,20 @@ function shouldHideHUD()
 end
 
 function startHUDUpdateThread()
+    print("startHUDUpdateThread: Wird gestartet.")
     Citizen.CreateThread(function()
         while characterLoaded do
             if shouldHideHUD() then
                 if hudVisible then
                     hudVisible = false
                     SendNUIMessage({ type = "hideHUD" })
+                    print("HUD versteckt.")
                 end
             else
                 if not hudVisible then
                     hudVisible = true
                     SendNUIMessage({ type = "showHUD" })
+                    print("HUD angezeigt.")
                 end
                 updateHUD()
             end
@@ -268,11 +285,15 @@ Citizen.CreateThread(function()
             if isDriver and not inVehicle then
                 inVehicle = true
                 SendNUIMessage({ type = "showTachoWithAnimation" })
+                print("Fahrzeugüberprüfung: Tacho angezeigt.")
             elseif (not isDriver or vehicle == 0) and inVehicle then
                 inVehicle = false
                 SendNUIMessage({ type = "hideTachoWithAnimation" })
                 SendNUIMessage({ type = "updateSpeed", speed = 0 })
+                print("Fahrzeugüberprüfung: Tacho versteckt.")
             end
+
+            print(string.format("Main loop: isDriver=%s, inVehicle=%s, vehicle=%s", tostring(isDriver), tostring(inVehicle), tostring(vehicle)))
         end
     end
 end)
@@ -319,6 +340,7 @@ function updateIndicators()
                     right = true,
                     sync = true
                 })
+                print("Blinker: Gefahrenlicht eingeschaltet.")
             end
         else
             hazardLightsOn = false
@@ -336,6 +358,7 @@ function updateIndicators()
                     right = rightIndicatorOn,
                     sync = false
                 })
+                print("Blinker: Links = " .. tostring(leftIndicatorOn) .. ", Rechts = " .. tostring(rightIndicatorOn))
             end
         end
     else
@@ -348,6 +371,7 @@ function updateIndicators()
                 right = false,
                 sync = false
             })
+            print("Blinker: Alle Blinker ausgeschaltet.")
         end
     end
 end
@@ -393,6 +417,7 @@ function updateHUD()
         zone = zoneName,
         postalCode = postalCode
     })
+    print("HUD aktualisiert.")
 
     if inVehicle then
         local vehicle = GetVehiclePedIsIn(playerPed, false)
@@ -406,11 +431,13 @@ function updateHUD()
                 speed = math.floor(speed),
                 maxSpeed = math.floor(maxSpeed)
             })
+            print("updateHUD: Geschwindigkeit aktualisiert.")
 
             SendNUIMessage({
                 type = "updateFuel",
                 fuel = math.floor(fuelLevel)
             })
+            print("updateHUD: Kraftstoffstand aktualisiert.")
 
             updateIndicators()
 
@@ -419,6 +446,7 @@ function updateHUD()
                 type = "updateEngineCondition",
                 engineHealth = engineHealth
             })
+            print("updateHUD: Motorzustand aktualisiert.")
 
             local retval, vehicleLightsOn, highbeamsOn = GetVehicleLightsState(vehicle)
             local lightsMode = 0
@@ -437,32 +465,11 @@ function updateHUD()
                 type = "updateLightsMode",
                 lightsMode = lightsMode
             })
+            print("updateHUD: Lichtmodus aktualisiert.")
         else
-            inVehicle = false
+            print("updateHUD: Kein Fahrzeug gefunden.")
         end
     end
-end
-
-function GetWeatherTypeNameFromHash(weatherHash)
-    local weatherTypes = {
-        [GetHashKey('EXTRASUNNY')] = 'EXTRASUNNY',
-        [GetHashKey('CLEAR')] = 'CLEAR',
-        [GetHashKey('CLOUDS')] = 'CLOUDS',
-        [GetHashKey('SMOG')] = 'SMOG',
-        [GetHashKey('FOGGY')] = 'FOGGY',
-        [GetHashKey('OVERCAST')] = 'OVERCAST',
-        [GetHashKey('RAIN')] = 'RAIN',
-        [GetHashKey('THUNDER')] = 'THUNDER',
-        [GetHashKey('CLEARING')] = 'CLEARING',
-        [GetHashKey('NEUTRAL')] = 'NEUTRAL',
-        [GetHashKey('SNOW')] = 'SNOW',
-        [GetHashKey('BLIZZARD')] = 'BLIZZARD',
-        [GetHashKey('SNOWLIGHT')] = 'SNOWLIGHT',
-        [GetHashKey('XMAS')] = 'XMAS',
-        [GetHashKey('HALLOWEEN')] = 'HALLOWEEN'
-    }
-
-    return weatherTypes[weatherHash] or 'UNKNOWN'
 end
 
 function isWeaponInInventory(weaponHash)
@@ -495,11 +502,11 @@ function checkPlayerWeaponStatus()
                 clip = lastClipAmmo,
                 total = lastTotalAmmo
             })
-
             SendNUIMessage({
                 type = "showAmmoHUD"
             })
             isAmmoHUDVisible = true
+            print("checkPlayerWeaponStatus: Munition aktualisiert und HUD angezeigt.")
         else
             Citizen.SetTimeout(100, function()
                 checkPlayerWeaponStatus()
@@ -536,6 +543,7 @@ function updateWeaponAmmo()
                     clip = lastClipAmmo,
                     total = lastTotalAmmo
                 })
+                print("updateWeaponAmmo: Munition aktualisiert.")
             end
 
             local isReloading = IsPedReloading(playerPed)
@@ -554,6 +562,7 @@ function updateWeaponAmmo()
                     clip = lastClipAmmo,
                     total = lastTotalAmmo
                 })
+                print("updateWeaponAmmo: Nachladen abgeschlossen, Munition aktualisiert.")
 
                 wasReloading = false
             elseif lastClipAmmo ~= ammoInClip then
@@ -563,6 +572,7 @@ function updateWeaponAmmo()
                     clip = lastClipAmmo,
                     total = lastTotalAmmo
                 })
+                print("updateWeaponAmmo: Munition reduziert, aktualisiert.")
             end
         end
 
@@ -571,6 +581,7 @@ function updateWeaponAmmo()
                 type = "showAmmoHUD"
             })
             isAmmoHUDVisible = true
+            print("updateWeaponAmmo: Ammo HUD angezeigt.")
         end
     else
         if isAmmoHUDVisible then
@@ -578,6 +589,7 @@ function updateWeaponAmmo()
             SendNUIMessage({
                 type = "hideAmmoHUD"
             })
+            print("updateWeaponAmmo: Ammo HUD versteckt.")
 
             Citizen.Wait(500)
             isSyncPaused = false
@@ -586,11 +598,12 @@ function updateWeaponAmmo()
     end
 end
 
-AddEventHandler('onResourceStart', function(resourceName)
+AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() == resourceName then
         Citizen.Wait(1000)
         checkPlayerWeaponStatus()
         TriggerServerEvent('LS-Hud:requestInitialData')
+        print("onClientResourceStart: Initialisiere Spielerdata und Waffenstatus.")
     end
 end)
 
@@ -623,5 +636,6 @@ Citizen.CreateThread(function()
             type = "updateAutopilotStatus",
             active = autopilotActive
         })
+        print("Autopilot-Status aktualisiert: " .. tostring(autopilotActive))
     end
 end)
